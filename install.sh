@@ -26,7 +26,6 @@ fi
 echo "🔗 Creating symlinks..."
 [ ! -e ".claude" ] && ln -sf .acg/claude .claude && echo "  ✅ .claude -> .acg/claude"
 [ ! -e "ai" ] && ln -sf .acg/ai ai && echo "  ✅ ai -> .acg/ai"
-[ ! -e "ticket-functions.sh" ] && ln -sf .acg/ai/scripts/ticket-functions.sh ticket-functions.sh && echo "  ✅ ticket-functions.sh"
 
 # Add to .gitignore if needed
 if ! grep -q "^\.acg$" .gitignore 2>/dev/null; then
@@ -38,9 +37,6 @@ echo ""
 echo "✅ ACG tooling installed successfully!"
 echo ""
 echo "📚 Quick Start:"
-echo "  source ticket-functions.sh"
-echo "  ticket_analyze YOUR-TICKET-ID"
-echo "  ticket_doc YOUR-TICKET-ID"
 echo ""
 echo "🎯 Claude Commands Available:"
 echo "  /generate-pr-summary"
