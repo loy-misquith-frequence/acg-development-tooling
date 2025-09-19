@@ -1,0 +1,66 @@
+name: Sync ACG to Consumer Repos
+
+on:
+  workflow_dispatch:
+    inputs:
+      repos:
+        description: 'Target repos (default: all)'
+        default: 'all'
+        type: choice
+        options: ['all', 'frequence-api', 'attributes-platform', 'frequence-platform', 'integrations']
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repo: [frequence-api, attributes-platform, frequence-platform, integrations]
+      fail-fast: false
+
+    steps:
+    - name: Skip if not selected
+      if: inputs.repos != 'all' && inputs.repos != matrix.repo
+      run: exit 0
+
+    - name: Checkout ACG repo
+      uses: actions/checkout@v4
+      with:
+        path: acg
+
+    - name: Checkout target repo
+      uses: actions/checkout@v4
+      with:
+        repository: loy-misquith-frequence/${{ matrix.repo }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+        path: target
+
+    - name: Sync Claude config
+      run: |
+        cd target
+        rsync -av --delete ../acg/.claude/ .claude/
+
+    - name: Sync AI context
+      run: |
+        cd target
+
+        # Use repo-specific context if exists, otherwise default
+        CONTEXT_DIR="../acg/ai/${{ matrix.repo }}_context"
+        if [ -d "$CONTEXT_DIR" ] && [ "$(ls -A $CONTEXT_DIR)" ]; then
+          echo "Using repo-specific context: ${{ matrix.repo }}_context"
+          rsync -av --delete --exclude=tickets/ "$CONTEXT_DIR/" ai/
+        else
+          echo "Using default context"
+          rsync -av --delete --exclude=tickets/ --exclude=*_context/ ../acg/ai/ ai/
+        fi
+
+    - name: Commit & Push
+      run: |
+        cd target
+        git config user.name "ACG Sync Bot"
+        git config user.email "acg-bot@frequence.com"
+
+        git add .claude ai
+        if ! git diff --cached --quiet; then
+          git commit -m "🤖 Update ACG tooling from central repo"
+          git push origin master
+        fi
