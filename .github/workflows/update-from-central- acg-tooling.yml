@@ -31,7 +31,6 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: loy-misquith-frequence/${{ matrix.repo }}
-        token: ${{ secrets.GITHUB_TOKEN }}
         path: target
 
     - name: Sync Claude config
@@ -42,15 +41,22 @@ jobs:
     - name: Sync AI context
       run: |
         cd target
+        mkdir -p ai
 
-        # Use repo-specific context if exists, otherwise default
-        CONTEXT_DIR="../acg/ai/${{ matrix.repo }}_context"
-        if [ -d "$CONTEXT_DIR" ] && [ "$(ls -A $CONTEXT_DIR)" ]; then
-          echo "Using repo-specific context: ${{ matrix.repo }}_context"
-          rsync -av --delete --exclude=tickets/ "$CONTEXT_DIR/" ai/
+        # First sync common/shared AI context (excluding repo-specific folders)
+        echo "Syncing common AI context..."
+        rsync -av --delete \
+          --exclude=tickets/ \
+          --exclude=*_context/ \
+          ../acg/ai/ ai/
+
+        # Then sync repo-specific context if it exists
+        REPO_CONTEXT="../acg/ai/${{ matrix.repo }}_context"
+        if [ -d "$REPO_CONTEXT" ] && [ "$(ls -A $REPO_CONTEXT)" ]; then
+          echo "Syncing repo-specific context: ${{ matrix.repo }}_context"
+          rsync -av --exclude=tickets/ "$REPO_CONTEXT/" ai/
         else
-          echo "Using default context"
-          rsync -av --delete --exclude=tickets/ --exclude=*_context/ ../acg/ai/ ai/
+          echo "No repo-specific context found for ${{ matrix.repo }}"
         fi
 
     - name: Commit & Push
