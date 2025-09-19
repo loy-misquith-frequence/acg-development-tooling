@@ -7,14 +7,14 @@ on:
         description: 'Target repos (default: all)'
         default: 'all'
         type: choice
-        options: ['all', 'frequence-api', 'attributes-platform', 'frequence-platform', 'integrations']
+        options: ['all', 'acg-tooling-consumer', 'acg-tooling-consumer1']
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        repo: [frequence-api, attributes-platform, frequence-platform, integrations]
+        repo: [acg-tooling-consumer, acg-tooling-consumer1]
       fail-fast: false
 
     steps:
