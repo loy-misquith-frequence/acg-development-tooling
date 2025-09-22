@@ -97,6 +97,4 @@ jobs:
         cd target
           git push origin ${{ steps.branch.outputs.target_branch }}
           echo "Changes pushed successfully"
-        else
-          echo "No changes to push"
         fi
