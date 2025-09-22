@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       repos:
-        description: 'Target repos (default: all)'
+        description: 'Target repos'
         default: 'all'
         type: choice
         options: ['all', 'acg-tooling-consumer', 'acg-tooling-consumer1']
@@ -14,7 +14,7 @@ on:
         type: choice
         options: ['develop', 'master', '<<feature branch>>']
       custom_branch:
-        description: 'Feature branch name (only if "<<feature branch>>" selected above)'
+        description: 'Add "<<feature branch>>" name'
         required: false
         type: string
 
