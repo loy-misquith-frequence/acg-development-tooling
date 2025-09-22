@@ -9,12 +9,12 @@ on:
         type: choice
         options: ['all', 'acg-tooling-consumer', 'acg-tooling-consumer1']
       branch:
-        description: 'Target branch (select from dropdown or choose "custom" to enter your own)'
+        description: 'Target branch'
         default: 'develop'
         type: choice
-        options: ['develop', 'master', 'main', 'staging', 'custom']
+        options: ['develop', 'master', '<<feature branch>>']
       custom_branch:
-        description: 'Custom branch name (only if "custom" selected above)'
+        description: 'Feature branch name (only if "<<feature branch>>" selected above)'
         required: false
         type: string
 
@@ -34,7 +34,7 @@ jobs:
     - name: Determine target branch
       id: branch
       run: |
-        if [ "${{ inputs.branch }}" = "custom" ]; then
+        if [ "${{ inputs.branch }}" = "feature branch" ]; then
           echo "target_branch=${{ inputs.custom_branch }}" >> $GITHUB_OUTPUT
         else
           echo "target_branch=${{ inputs.branch }}" >> $GITHUB_OUTPUT
@@ -54,21 +54,22 @@ jobs:
         ref: ${{ steps.branch.outputs.target_branch }}
         path: target
 
-    - name: Sync Claude config
+    - name: Sync Claude config (.claude folder)
       run: |
         cd target
         rsync -av --delete ../acg/.claude/ .claude/
 
-    - name: Sync AI context
+    - name: Sync shared AI folders 
       run: |
         cd target
         mkdir -p ai
 
-        # First sync common/shared AI context (excluding repo-specific folders)
-        echo "Syncing common AI context..."
+        echo "Syncing shared AI context..."
         rsync -av --delete --exclude=*_context/ --exclude=tickets/ ../acg/ai/ ai/
 
-        # Then sync repo-specific context if it exists
+    - name: Sync repo-specific AI context
+      run: |
+        cd target
         REPO_CONTEXT="../acg/ai/${{ matrix.repo }}_context"
         if [ -d "$REPO_CONTEXT" ] && [ "$(ls -A $REPO_CONTEXT)" ]; then
           echo "Syncing repo-specific context: ${{ matrix.repo }}_context"
@@ -77,7 +78,7 @@ jobs:
           echo "No repo-specific context found for ${{ matrix.repo }}"
         fi
 
-    - name: Commit & Push
+    - name: Commit changes
       run: |
         cd target
         git config user.name "ACG Sync Bot"
@@ -86,5 +87,16 @@ jobs:
         git add .claude ai
         if ! git diff --cached --quiet; then
           git commit -m "Update ACG tooling from central repo"
+          echo "Changes committed"
+        else
+          echo "No changes to commit"
+        fi
+
+    - name: Push changes
+      run: |
+        cd target
           git push origin ${{ steps.branch.outputs.target_branch }}
+          echo "Changes pushed successfully"
+        else
+          echo "No changes to push"
         fi
