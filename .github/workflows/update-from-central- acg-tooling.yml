@@ -95,6 +95,5 @@ jobs:
     - name: Push changes
       run: |
         cd target
-          git push origin ${{ steps.branch.outputs.target_branch }}
-          echo "Changes pushed successfully"
-        fi
+        git push origin ${{ steps.branch.outputs.target_branch }}
+        echo "Changes pushed successfully"
